@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   sensors_plus: ^6.0.0
   camera: ^0.11.0
+  ort:
+    git: https://github.com/NathanKolbas/ort_dart
 
 dev_dependencies:
   flutter_test:
