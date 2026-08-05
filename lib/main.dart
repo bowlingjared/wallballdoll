@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:camera/camera.dart';
+import 'pose_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,15 +27,33 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final PoseModel _poseModel = PoseModel();
   bool _hasAccelerometer = false;
   bool _hasFrontCamera = false;
   bool _hasRearCamera = false;
+  bool _modelLoaded = false;
   bool _checked = false;
 
   @override
   void initState() {
     super.initState();
     _checkHardware();
+    _loadModel();
+  }
+
+  @override
+  void dispose() {
+    _poseModel.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadModel() async {
+    await _poseModel.initialize();
+    if (mounted) {
+      setState(() {
+        _modelLoaded = _poseModel.isLoaded;
+      });
+    }
   }
 
   Future<void> _checkHardware() async {
@@ -76,7 +95,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text('Hello, world!', style: TextStyle(fontSize: 24)),
             const SizedBox(height: 24),
-            if (!_checked)
+            if (!_checked || _poseModel.isLoading)
               const CircularProgressIndicator()
             else
               Column(
@@ -93,6 +112,11 @@ class _HomePageState extends State<HomePage> {
                     label: 'Rear Camera',
                     available: _hasRearCamera,
                   ),
+                  _HardwareRow(
+                    label: 'Pose Model (ONNX)',
+                    available: _modelLoaded,
+                    error: _poseModel.loadError?.toString(),
+                  ),
                 ],
               ),
           ],
@@ -105,29 +129,43 @@ class _HomePageState extends State<HomePage> {
 class _HardwareRow extends StatelessWidget {
   final String label;
   final bool available;
+  final String? error;
 
-  const _HardwareRow({required this.label, required this.available});
+  const _HardwareRow({required this.label, required this.available, this.error});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            available ? Icons.check_circle : Icons.cancel,
-            color: available ? Colors.green : Colors.red,
-            size: 24,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                available ? Icons.check_circle : Icons.cancel,
+                color: available ? Colors.green : Colors.red,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$label: ${available ? "Yes" : "No"}',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: available ? Colors.green : Colors.red,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Text(
-            '$label: ${available ? "Yes" : "No"}',
-            style: TextStyle(
-              fontSize: 16,
-              color: available ? Colors.green : Colors.red,
+          if (error != null && !available)
+            Padding(
+              padding: const EdgeInsets.only(left: 36, top: 4),
+              child: Text(
+                error!,
+                style: const TextStyle(fontSize: 12, color: Colors.red),
+              ),
             ),
-          ),
         ],
       ),
     );
