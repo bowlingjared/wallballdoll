@@ -31,7 +31,7 @@ jobs:
       - name: Verify Flutter setup
         run: flutter doctor -v
 
-      - name: Build iOS (Debug)
+      - name: Build iOS (Debug - no codesign)
         run: |
           cd ios
           xcodebuild -workspace Runner.xcworkspace \
@@ -39,6 +39,9 @@ jobs:
             -configuration Debug \
             -destination 'generic/platform=iOS' \
             -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM= \
             build
         working-directory: .
 
@@ -52,6 +55,7 @@ jobs:
             -quiet \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM= \
             build
         working-directory: .
 
@@ -76,4 +80,17 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter test
+        working-directory: .
+      - name: Build iOS (Debug - no codesign) [test]
+        run: |
+          cd ios
+          xcodebuild -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            -quiet \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            DEVELOPMENT_TEAM= \
+            build
         working-directory: .
